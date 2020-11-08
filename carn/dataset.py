@@ -77,13 +77,16 @@ class TestDataset(data.Dataset):
     def __init__(self, dirname, scale):
         super(TestDataset, self).__init__()
 
+        print("dirname: {}".format(dirname))
         self.name  = dirname.split("/")[-1]
         self.scale = scale
+        self.hrpath = os.path.join("{}_HR".format(dirname))
+        self.lrpath = os.path.join("{}_LR_bicubic/X{}".format(dirname, scale))
         
         if "DIV" in self.name:
-            self.hr = glob.glob(os.path.join("{}_HR".format(dirname), "*.png"))
-            self.lr = glob.glob(os.path.join("{}_LR_bicubic".format(dirname), 
-                                             "X{}/*.png".format(scale)))
+            print("Div in name!")
+            self.hr = [f for f in os.listdir(self.hrpath) if os.path.isfile(os.path.join(self.hrpath, f))]
+            self.lr = [f for f in os.listdir(self.lrpath) if os.path.isfile(os.path.join(self.lrpath, f))]
         else:
             all_files = glob.glob(os.path.join(dirname, "x{}/*.png".format(scale)))
             self.hr = [name for name in all_files if "HR" in name]
@@ -96,9 +99,12 @@ class TestDataset(data.Dataset):
             transforms.ToTensor()
         ])
 
+        print("Length of High Res images in dataset: {}".format(len(self.hr)))
+        print("Length of Low Res images in dataset: {}".format(len(self.lr)))
+
     def __getitem__(self, index):
-        hr = Image.open(self.hr[index])
-        lr = Image.open(self.lr[index])
+        hr = Image.open(self.hrpath + "/" + self.hr[index])
+        lr = Image.open(self.lrpath + "/" + self.lr[index])
 
         hr = hr.convert("RGB")
         lr = lr.convert("RGB")

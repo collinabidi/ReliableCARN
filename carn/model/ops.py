@@ -47,6 +47,31 @@ class BasicBlock(nn.Module):
         out = self.body(x)
         return out
 
+class ResilientBasicBlock(nn.Module):
+    ''' An ABFT-enabled BasicBlock that hardens convolutional layers
+    Args:
+        in_channels (int): number of input layers
+        out_channels (int): number of output layers
+        ksize (int): size of the kernel
+        stride (int): stride of convolutions
+        pad (int): padding for each image
+    '''
+    def __init__(self,
+                 in_channels, out_channels,
+                 ksize=3, stride=1, pad=1):
+        super(ResilientBasicBlock, self).__init__()
+
+        self.body = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, ksize, stride, pad),
+            nn.ReLU(inplace=True)
+        )
+
+        init_weights(self.modules)
+        
+    def forward(self, x):
+        out = self.body(x)
+        return out
+
 
 class ResidualBlock(nn.Module):
     def __init__(self, 

@@ -56,6 +56,7 @@ class Net(nn.Module):
                                           group=group)
         self.exit = nn.Conv2d(64, 3, 3, 1, 1)
                 
+    @profile
     def forward(self, x, scale):
         x = self.sub_mean(x)
         x = self.entry(x)

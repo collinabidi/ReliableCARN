@@ -33,15 +33,20 @@ def save_image(tensor, filename):
 
 
 def sample(net, device, dataset, cfg):
+    print("Calling sample")
     scale = cfg.scale
+    print(type(dataset))
+    item = dataset[0]
     for step, (hr, lr, name) in enumerate(dataset):
-        if "DIV2K" in dataset.name:
+        if step >= 10:
+            print("reeee done")
+            return
+        elif "DIV2K" in dataset.name:
             t1 = time.time()
             h, w = lr.size()[1:]
             h_half, w_half = int(h/2), int(w/2)
             h_chop, w_chop = h_half + cfg.shave, w_half + cfg.shave
-
-            lr_patch = torch.tensor((4, 3, h_chop, w_chop), dtype=torch.float)
+            lr_patch = torch.zeros([4, 3, h_chop, w_chop], dtype=torch.float)
             lr_patch[0].copy_(lr[:, 0:h_chop, 0:w_chop])
             lr_patch[1].copy_(lr[:, 0:h_chop, w-w_chop:w])
             lr_patch[2].copy_(lr[:, h-h_chop:h, 0:w_chop])
@@ -53,7 +58,7 @@ def sample(net, device, dataset, cfg):
             h, h_half, h_chop = h*scale, h_half*scale, h_chop*scale
             w, w_half, w_chop = w*scale, w_half*scale, w_chop*scale
 
-            result = torch.tensor((3, h, w), dtype=torch.float).to(device)
+            result = torch.zeros([3, h, w], dtype=torch.float).to(device)
             result[:, 0:h_half, 0:w_half].copy_(sr[0, :, 0:h_half, 0:w_half])
             result[:, 0:h_half, w_half:w].copy_(sr[1, :, 0:h_half, w_chop-w+w_half:w_chop])
             result[:, h_half:h, 0:w_half].copy_(sr[2, :, h_chop-h+h_half:h_chop, 0:w_half])
@@ -93,11 +98,10 @@ def sample(net, device, dataset, cfg):
 
 def main(cfg):
     module = importlib.import_module("model.{}".format(cfg.model))
-    net = module.Net(multi_scale=True, 
-                     group=cfg.group)
+    net = module.Net(multi_scale=True, scale=cfg.scale, group=cfg.group)
     print(json.dumps(vars(cfg), indent=4, sort_keys=True))
 
-    state_dict = torch.load(cfg.ckpt_path)
+    state_dict = torch.load(cfg.ckpt_path,map_location=torch.device('cpu'))
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         name = k
