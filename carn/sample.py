@@ -10,6 +10,8 @@ import torch.nn as nn
 from torch.autograd import Variable
 from dataset import TestDataset
 from PIL import Image
+from pytorchfi.core import fault_injection as pfi_core
+from pytorchfi.errormodels import random_neuron_inj
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -35,13 +37,9 @@ def save_image(tensor, filename):
 def sample(net, device, dataset, cfg):
     print("Calling sample")
     scale = cfg.scale
-    print(type(dataset))
     item = dataset[0]
     for step, (hr, lr, name) in enumerate(dataset):
-        if step >= 10:
-            print("reeee done")
-            return
-        elif "DIV2K" in dataset.name:
+        if "DIV2K" in dataset.name:
             t1 = time.time()
             h, w = lr.size()[1:]
             h_half, w_half = int(h/2), int(w/2)
@@ -52,8 +50,12 @@ def sample(net, device, dataset, cfg):
             lr_patch[2].copy_(lr[:, h-h_chop:h, 0:w_chop])
             lr_patch[3].copy_(lr[:, h-h_chop:h, w-w_chop:w])
             lr_patch = lr_patch.to(device)
-            
-            sr = net(lr_patch, cfg.scale).detach()
+
+            # Fault injection code
+            pfi_model = pfi_core(net, h_chop, w_chop, 1, debug=True)
+            inj_model = random_neuron_inj(pfi_model, min_val=-1, max_val=1)
+            sr = inj_model(lr_patch).detach()
+            #sr = net(lr_patch, cfg.scale).detach()
             
             h, h_half, h_chop = h*scale, h_half*scale, h_chop*scale
             w, w_half, w_chop = w*scale, w_half*scale, w_chop*scale
