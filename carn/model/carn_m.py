@@ -42,6 +42,7 @@ class Net(nn.Module):
         self.sub_mean = ops.MeanShift((0.4488, 0.4371, 0.4040), sub=True)
         self.add_mean = ops.MeanShift((0.4488, 0.4371, 0.4040), sub=False)
 
+        #@#@ Protect this convolution operation with ABFT
         self.entry = nn.Conv2d(3, 64, 3, 1, 1)
 
         self.b1 = Block(64, 64, group=group)
@@ -54,6 +55,8 @@ class Net(nn.Module):
         self.upsample = ops.UpsampleBlock(64, scale=scale, 
                                           multi_scale=multi_scale,
                                           group=group)
+
+        #@#@ Protect this convolution operation with ABFT
         self.exit = nn.Conv2d(64, 3, 3, 1, 1)
                 
     def forward(self, x):
@@ -80,3 +83,7 @@ class Net(nn.Module):
         out = self.add_mean(out)
 
         return out
+
+    def calculate_checksums(self, operation):
+        # Compute the checksums using the filters and input to the convolutional layer
+        retun None

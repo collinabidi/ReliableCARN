@@ -56,11 +56,14 @@ def sample(net, device, dataset, cfg):
             inj_model = random_neuron_inj(pfi_model, min_val=-1, max_val=1)
             sr = inj_model(lr_patch).detach()
             #sr = net(lr_patch, cfg.scale).detach()
+
             
             h, h_half, h_chop = h*scale, h_half*scale, h_chop*scale
             w, w_half, w_chop = w*scale, w_half*scale, w_chop*scale
 
             result = torch.zeros([3, h, w], dtype=torch.float).to(device)
+            print("Result shape: {}".format(result.size()))
+            print("SR shape: {}".format(sr.size()))
             result[:, 0:h_half, 0:w_half].copy_(sr[0, :, 0:h_half, 0:w_half])
             result[:, 0:h_half, w_half:w].copy_(sr[1, :, 0:h_half, w_chop-w+w_half:w_chop])
             result[:, h_half:h, 0:w_half].copy_(sr[2, :, h_chop-h+h_half:h_chop, 0:w_half])
